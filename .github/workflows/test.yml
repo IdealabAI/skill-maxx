@@ -1,0 +1,18 @@
+name: Skill installers
+on:
+  push:
+  pull_request:
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test Windows PowerShell 5.1 installer
+        shell: powershell
+        run: ./tests/install.Tests.ps1
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test system Bash installer
+        run: /bin/bash tests/install.test.sh

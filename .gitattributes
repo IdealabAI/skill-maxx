@@ -1,2 +1,5 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Preserve line endings exactly as they exist in the working tree.
+# The `-text` attribute disables Git's end-of-line conversion in both
+# directions, so files are stored on check-in and restored on check-out
+# byte-for-byte, regardless of any contributor's core.autocrlf setting.
+* -text
