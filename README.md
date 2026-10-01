@@ -4,7 +4,7 @@ This repository distributes Markdown skills for Codex and Claude Code. The nativ
 
 ## Available Skills
 
-The `progress-reporting` skill maintains a timestamped Markdown report in the working project's `reports/` directory while an agent implements a detailed plan. The report includes configuration information, a checklist, timestamped updates, and usage information when available. The agent selects the skill automatically for relevant implementation work, or the user can invoke it explicitly. The agent appends `AGENTS OK` while the reported task is active, including its completion response.
+The `progress-reporting` skill maintains a timestamped task folder in the working directory's `agent-work-logs/` directory while an agent implements a detailed plan. The folder contains Markdown files for progress, the implementation plan, the initiating user prompt, and the completion report. The progress file includes configuration information, a checklist, timestamped updates, and usage information when available. The completion report includes outcome, token usage, timing, and improvement tables. The agent selects the skill automatically for relevant implementation work, or the user can invoke it explicitly. The agent appends `AGENTS OK` while the reported task is active, including its completion response.
 
 The `echo` skill provides a single-invocation installation test. The agent repeats the supplied payload and appends a newline followed by `HELLO TEST`. Later messages receive normal responses. An invocation without a payload returns only `HELLO TEST`.
 
@@ -131,7 +131,23 @@ $progress-reporting Implement the agreed plan and maintain a progress report.
 /progress-reporting Implement the agreed plan and maintain a progress report.
 ```
 
-The resulting report uses a path such as `reports/2026-09-17_143025_task-title.md`. The filename uses local time and Windows-safe characters. The report records the local UTC offset and remains available after completion. Users can keep reports as project artifacts or add `reports/` to that project's ignore rules.
+The resulting task folder uses a path such as `agent-work-logs/2026-09-17_143025_task-title/`. The folder name uses local time and Windows-safe characters. A numeric suffix prevents collisions; that suffix remains in the filenames after the timestamp is removed. For example, a folder ending in `task-title-2` contains files whose names begin with `task-title-2`.
+
+The folder contains the following files:
+
+```text
+agent-work-logs/2026-09-17_143025_task-title/
+    task-title-progress.md
+    task-title-implementation-plan.md
+    task-title-user-prompt.md
+    task-title-report.md
+```
+
+At implementation start, the agent creates the progress file, copies the detailed plan or writes one if none exists, and saves the latest user message verbatim. Later user messages do not replace the initial prompt snapshot. The progress configuration references the saved plan and records the local UTC offset. At completion or a terminal blocked outcome, the agent creates the report with tables describing success or problems, total token usage, the greatest identifiable token source, total elapsed time, and suggested improvements to the prompt, tools, or models.
+
+The timing breakdown distinguishes agent inference, tool use, waiting, and other applicable activities without double-counting concurrent work. The agent labels estimates and their uncertainty and uses `unknown` when available evidence cannot support a usage estimate. Unattributable elapsed time is recorded as unclassified. Improvement suggestions target greater speed without significantly reducing quality, or greater quality without significantly reducing speed.
+
+The entire folder remains available after completion. Users can keep task folders as project artifacts or add `agent-work-logs/` to that project's ignore rules. Existing reports remain in place.
 
 ## Windows 11 Local Test Walkthrough
 
@@ -161,7 +177,9 @@ $progress-reporting Implement this plan in the current disposable project:
 Maintain the report as you work and record completion.
 ```
 
-Users should verify that the report contains the configuration fields, a completed checklist, timestamped updates, the ending labels, and an accurate completion entry. The agent should append `AGENTS OK` to its task messages and use `unknown` for metadata it cannot observe. The same prompt without a skill invocation tests automatic selection. A longer implementation task can exercise the approximate minute interval and updates after user messages; the short greeting task will usually finish before that interval.
+Users should verify that the task folder contains all four Markdown files with matching stems and the expected suffixes. The progress file should contain the configuration fields, a reference to the saved plan, a completed checklist, timestamped updates, the ending labels, and an accurate completion entry. The plan file should preserve the supplied plan, and the prompt file should preserve the initiating user message verbatim. The completion report should contain outcome, usage, timing, and improvement tables, with estimates clearly identified and timing categories accounting for elapsed time without overlap. The agent should append `AGENTS OK` to its task messages and use `unknown` for metadata it cannot observe.
+
+The same prompt without a skill invocation tests automatic selection. A task without an existing detailed plan should produce a newly written plan before implementation. Additional checks should cover a colliding folder name, a terminal blocked outcome, unavailable usage data, and denied file writes. A collision should preserve the existing folder and carry the new numeric suffix into every filename. A blocked outcome should identify the remaining blockers in the report, and a write failure should produce an accurate explanation of missing or stale artifacts. A longer implementation task can exercise the approximate minute interval and updates after user messages while confirming that the initial prompt snapshot remains unchanged; the short greeting task will usually finish before that interval.
 
 The automated suite checks installation behavior without calling a model or using an account. Its global-install tests use an isolated child-process home, so the suite does not install skills into the developer's real profile.
 
@@ -248,8 +266,8 @@ For a custom agent loop, the product must implement discovery and loading. The a
 3. The application reads the selected skill body and adds it to the agent's instruction context, below the product's own policies. The application resolves referenced resources relative to the selected skill folder.
 4. The application makes the required tools available. Progress reporting needs a clock and a writable per-session working directory; echo needs no tools.
 5. The application preserves active skill instructions across the relevant task turns and ends their scope correctly. Echo applies to one invocation; progress reporting applies to the implementation task.
-6. The application persists completed reports to its artifact store before an ephemeral worker is destroyed and provides the user with access to the reports.
+6. The application persists the entire task folder from `agent-work-logs/` to its artifact store before an ephemeral worker is destroyed and provides the user with access to the progress, plan, prompt, and completion files. The application preserves any available partial artifacts if the worker stops before completion.
 
 The product should isolate working directories between users and sessions, load only its packaged or approved skills, and keep report paths inside the session workspace. A skill file does not grant tool permissions or automatically schedule periodic execution. If the product requires exact echo output or guaranteed reporting intervals, the product should implement those guarantees in its own runtime and use the skill to describe the corresponding behavior.
 
-A cloud smoke test should load `echo`, submit a multiline payload, compare the returned text and watermark, and verify that the next normal turn is unaffected. A reporting smoke test should run a small implementation plan, inspect the persisted report, and verify that unknown runtime metadata remains marked as unknown. Teams should run these checks against each supported model and agent runtime before releasing a new skill revision.
+A cloud smoke test should load `echo`, submit a multiline payload, compare the returned text and watermark, and verify that the next normal turn is unaffected. A reporting smoke test should run a small implementation plan, inspect all four persisted task files and the completion tables, and verify that unknown runtime metadata remains marked as unknown. Teams should run these checks against each supported model and agent runtime before releasing a new skill revision.
