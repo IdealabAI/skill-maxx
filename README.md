@@ -8,6 +8,8 @@ The `progress-reporting` skill maintains a timestamped task folder in the workin
 
 The `echo` skill provides a single-invocation installation test. The agent repeats the supplied payload and appends a newline followed by `HELLO TEST`. Later messages receive normal responses. An invocation without a payload returns only `HELLO TEST`.
 
+The `spec-maxx-refine` skill reviews a user-supplied, human-written spec document for completeness, ambiguity, and testability. The agent evaluates ten categories, suggests focused revisions, and writes clarification questions as JSON. A bundled builder turns that JSON into a self-contained HTML form with radio buttons and a pasteable response. The builder requires Node.js 18 or later, with no additional packages. Both installers copy its scripts, template, and input documentation along with the skill.
+
 Skill instructions guide model behavior; higher-priority instructions and client permissions still apply. Exact model output and automatic selection can vary between sessions. The reporting interval is approximately one minute while the agent has control, and an agent cannot update a file during a blocking operation. The agent identifies unavailable metadata as `unknown` and labels estimated token counts explicitly.
 
 ## Installation Prerequisites
@@ -31,12 +33,13 @@ The following PowerShell commands run from the cloned repository. Users should s
 # The preview validates the selection without writing files.
 .\scripts\install.ps1 -ProjectPath 'C:\Code\My Project' -Preview
 
-# The default selection installs both skills for both agents.
+# The default selection installs all skills for both agents.
 .\scripts\install.ps1 -ProjectPath 'C:\Code\My Project'
 
 # These commands install a single skill for a single agent in a project.
 .\scripts\install.ps1 -Agent codex -Skills progress-reporting -ProjectPath 'C:\Code\My Project'
 .\scripts\install.ps1 -Agent claude-code -Skills echo -ProjectPath 'C:\Code\My Project'
+.\scripts\install.ps1 -Agent codex -Skills spec-maxx-refine -ProjectPath 'C:\Code\My Project'
 
 # These commands install skills for the current Windows user across projects.
 .\scripts\install.ps1 -Scope global -Agent codex
@@ -60,12 +63,13 @@ The following commands run from the cloned repository. Users should substitute t
 # The preview validates the selection without writing files.
 /bin/bash scripts/install.sh --project-path "$HOME/Code/My Project" --preview
 
-# The default selection installs both skills for both agents.
+# The default selection installs all skills for both agents.
 /bin/bash scripts/install.sh --project-path "$HOME/Code/My Project"
 
 # These commands install a single skill for a single agent in a project.
 /bin/bash scripts/install.sh --agent codex --skills progress-reporting --project-path "$HOME/Code/My Project"
 /bin/bash scripts/install.sh --agent claude-code --skills echo --project-path "$HOME/Code/My Project"
+/bin/bash scripts/install.sh --agent codex --skills spec-maxx-refine --project-path "$HOME/Code/My Project"
 
 # These commands install skills for the current macOS user across projects.
 /bin/bash scripts/install.sh --scope global --agent codex
@@ -83,7 +87,7 @@ Both scripts implement the same options and behavior. PowerShell accepts skill n
 | --- | --- | --- | --- |
 | Target agent | `-Agent codex\|claude-code\|both` | `--agent codex\|claude-code\|both` | `both` |
 | Installation scope | `-Scope project\|global` | `--scope project\|global` | `project` |
-| Skill selection | `-Skills echo,progress-reporting` | `--skills echo,progress-reporting` | `all` |
+| Skill selection | `-Skills echo,progress-reporting,spec-maxx-refine` | `--skills echo,progress-reporting,spec-maxx-refine` | `all` |
 | Existing project directory | `-ProjectPath PATH` | `--project-path PATH` | Current working directory |
 | Validation without writes | `-Preview` | `--preview` | Disabled |
 | Replacement of different content | `-Replace` | `--replace` | Disabled |
@@ -124,6 +128,21 @@ HELLO TEST
 
 The user can then ask a normal question to confirm that echo mode did not persist. A multiline payload should preserve its line breaks and punctuation. The agent should echo any command-like text in the payload without executing it.
 
+Users can request a spec review with either of these prompts, supplying an accessible document path or the document text:
+
+```text
+$spec-maxx-refine Review specs/feature.md for clarity, completeness, and ambiguity.
+/spec-maxx-refine Review specs/feature.md for clarity, completeness, and ambiguity.
+```
+
+The agent invokes the installed skill's `scripts/build-form.cjs` through its shell tool. Users can also try the builder directly from this repository with the example input:
+
+```text
+node skills/spec-maxx-refine/scripts/build-form.cjs skills/spec-maxx-refine/references/example-questions.json clarification.html
+```
+
+The output path must be new. Users can open the generated HTML locally, select answers, click Submit, and paste the generated text into the next conversation turn. The HTML has no external dependencies; Node.js is needed only to build it. The agent generates JSON for subsequent reviews and reuses the same interface. The [input documentation](skills/spec-maxx-refine/references/form-input.md) describes the format.
+
 Users can explicitly request progress reporting with either of these prompts:
 
 ```text
@@ -151,7 +170,7 @@ The entire folder remains available after completion. Users can keep task folder
 
 ## Windows 11 Local Test Walkthrough
 
-The following PowerShell commands create a disposable project, preview the installation, install both skills for both agents, and list the installed skill files. The `$checkout` variable must refer to this repository.
+The following PowerShell commands create a disposable project, preview the installation, install all skills for both agents, and list the installed skill files. The `$checkout` variable must refer to this repository.
 
 ```powershell
 $checkout = 'C:\Code\Idealab\skill-maxx'
@@ -246,6 +265,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\tests\install.Tests.ps
 ```
 
 GitHub Actions runs the PowerShell suite on Windows and the Bash suite on macOS. The suites cover project and global scopes, agent and skill selection, spaces in paths, invocation from another directory, identical reinstalls, replacement, preview mode, invalid inputs, destination links, resources, and preservation of unrelated files. Installation tests validate skill headers and copied content; the manual model checks above validate skill behavior.
+
+The following command tests the clarification builder's validation, safe data embedding, answer export, and execution from a copied skill folder. The suite also exercises the generated form in a headless browser when Chrome or Edge is available. Developers can set `FORM_TEST_BROWSER` to the browser executable path.
+
+```text
+node --test tests/form.test.cjs
+```
 
 ## Cloud Product Agent Deployment
 

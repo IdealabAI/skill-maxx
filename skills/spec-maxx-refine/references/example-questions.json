@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "spec": "Example spec: shared notes, draft 1",
+  "questions": [
+    {
+      "id": "Q1",
+      "category": "Edge Cases & Failure Handling",
+      "passage": "Editing: Users can update a shared note.",
+      "question": "What should happen when two users save changes to the same note concurrently?",
+      "choices": [
+        "The second save is rejected, and the user must review the newer version.",
+        "The most recent save replaces the earlier version."
+      ]
+    }
+  ]
+}

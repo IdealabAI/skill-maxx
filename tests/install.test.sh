@@ -16,11 +16,11 @@ run --preview
 assert test ! -e "$project/.agents"
 run
 for agent_dir in .agents .claude; do
-    for skill in echo progress-reporting; do
+    for skill in echo progress-reporting spec-maxx-refine; do
         assert diff -qr "$fixture/skills/$skill" "$project/$agent_dir/skills/$skill"
     done
 done
-assert test "$(run | grep -c '^Unchanged:')" -eq 4
+assert test "$(run | grep -c '^Unchanged:')" -eq 6
 printf '\nLocal edit.\n' >> "$project/.agents/skills/echo/SKILL.md"
 reject
 assert grep -q 'Local edit' "$project/.agents/skills/echo/SKILL.md"
@@ -32,8 +32,15 @@ run --scope global --agent codex --skills echo
 assert test -f "$test_home/.agents/skills/echo/SKILL.md"
 assert test ! -e "$test_home/.claude"
 assert test ! -e "$test_home/.agents/skills/progress-reporting"
-run --scope global --agent claude-code --skills echo,progress-reporting
+run --scope global --skills spec-maxx-refine
+for agent_dir in .agents .claude; do
+    assert diff -qr "$fixture/skills/spec-maxx-refine" "$test_home/$agent_dir/skills/spec-maxx-refine"
+    assert test ! -e "$test_home/$agent_dir/skills/progress-reporting"
+done
+assert test ! -e "$test_home/.claude/skills/echo"
+run --scope global --agent claude-code --skills echo,progress-reporting,spec-maxx-refine
 assert test -f "$test_home/.claude/skills/progress-reporting/SKILL.md"
+assert test -f "$test_home/.claude/skills/spec-maxx-refine/SKILL.md"
 fresh="$test_root/explicit project"
 mkdir "$fresh"
 reject --project-path "$fresh" --skills echo,missing

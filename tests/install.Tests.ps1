@@ -41,13 +41,20 @@ try {
     Assert (-not (Test-Path -LiteralPath (Join-Path $project '.agents'))) 'Preview created files.'
     $null = Run-Installer
     foreach ($agentDir in @('.agents', '.claude')) {
-        foreach ($skill in @('echo', 'progress-reporting')) {
+        foreach ($skill in @('echo', 'progress-reporting', 'spec-maxx-refine')) {
             $actual = Join-Path $project "$agentDir/skills/$skill/SKILL.md"
             $expected = Join-Path $fixture "skills/$skill/SKILL.md"
             Assert ((Get-FileHash $actual).Hash -eq (Get-FileHash $expected).Hash) "Installed content differs: $actual"
         }
     }
     Assert ((Run-Installer) -match 'Unchanged:') 'Repeat install was not a no-op.'
+    foreach ($agentDir in @('.agents', '.claude')) {
+        foreach ($resource in @('scripts/build-form.cjs', 'assets/form.html', 'assets/form.cjs', 'references/form-input.md', 'references/example-questions.json')) {
+            $actual = Join-Path $project "$agentDir/skills/spec-maxx-refine/$resource"
+            $expected = Join-Path $fixture "skills/spec-maxx-refine/$resource"
+            Assert ((Get-FileHash $actual).Hash -eq (Get-FileHash $expected).Hash) "Installed form resource differs: $actual"
+        }
+    }
     $echo = Join-Path $project '.agents/skills/echo/SKILL.md'
     Add-Content -LiteralPath $echo -Value 'Local edit.'
     $null = Run-Installer '' $true
@@ -61,8 +68,17 @@ try {
     Assert (Test-Path -LiteralPath (Join-Path $testHome '.agents/skills/echo/SKILL.md')) 'Global Codex installation failed.'
     Assert (-not (Test-Path -LiteralPath (Join-Path $testHome '.claude'))) 'Agent selection was ignored.'
     Assert (-not (Test-Path -LiteralPath (Join-Path $testHome '.agents/skills/progress-reporting'))) 'Skill selection was ignored.'
-    $null = Run-Installer '-Scope global -Agent claude-code -Skills echo,progress-reporting'
+    $null = Run-Installer '-Scope global -Skills spec-maxx-refine'
+    foreach ($agentDir in @('.agents', '.claude')) {
+        $actual = Join-Path $testHome "$agentDir/skills/spec-maxx-refine/SKILL.md"
+        $expected = Join-Path $fixture 'skills/spec-maxx-refine/SKILL.md'
+        Assert ((Get-FileHash $actual).Hash -eq (Get-FileHash $expected).Hash) "Selected spec skill content differs: $actual"
+        Assert (-not (Test-Path -LiteralPath (Join-Path $testHome "$agentDir/skills/progress-reporting"))) 'Spec skill selection installed another skill.'
+    }
+    Assert (-not (Test-Path -LiteralPath (Join-Path $testHome '.claude/skills/echo'))) 'Spec skill selection installed echo.'
+    $null = Run-Installer '-Scope global -Agent claude-code -Skills echo,progress-reporting,spec-maxx-refine'
     Assert (Test-Path -LiteralPath (Join-Path $testHome '.claude/skills/progress-reporting/SKILL.md')) 'Combined skill selection failed.'
+    Assert (Test-Path -LiteralPath (Join-Path $testHome '.claude/skills/spec-maxx-refine/SKILL.md')) 'Combined selection omitted the spec skill.'
     $fresh = Join-Path $testRoot 'explicit project'
     New-Item -ItemType Directory -Path $fresh | Out-Null
     $null = Run-Installer ('-ProjectPath ' + (Quote $fresh) + ' -Skills echo,missing') $true

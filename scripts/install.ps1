@@ -1,4 +1,17 @@
-# Windows PowerShell 5.1 or later. No administrator access is required.
+<#
+.SYNOPSIS
+This script installs repository skills for Codex and Claude Code.
+.DESCRIPTION
+This script requires Windows PowerShell 5.1 or later. No administrator access is required.
+.PARAMETER Skills
+The selection accepts skill names as an array or a comma-separated string.
+Available skills include echo, progress-reporting, and spec-maxx-refine.
+The default value, all, discovers every skill folder in the repository.
+.EXAMPLE
+ .\scripts\install.ps1 -Skills spec-maxx-refine -ProjectPath 'C:\Code\My Project'
+.EXAMPLE
+ .\scripts\install.ps1 -Skills echo,progress-reporting,spec-maxx-refine -Scope global
+#>
 [CmdletBinding()]
 param(
     [ValidateSet('codex', 'claude-code', 'both')][string]$Agent = 'both',

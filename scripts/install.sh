@@ -7,6 +7,8 @@ usage() {
 Usage: bash install.sh [--agent codex|claude-code|both] [--scope project|global]
   [--skills all|name,name] [--project-path PATH] [--preview] [--replace]
 The defaults install all skills for both agents into the current project directory.
+Available skills include echo, progress-reporting, and spec-maxx-refine.
+Example: bash scripts/install.sh --skills spec-maxx-refine --project-path /path/to/project
 EOF
 }
 agent=both scope=project selected=all project_path="$PWD" preview=false replace=false explicit_project=false

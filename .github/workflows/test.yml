@@ -7,6 +7,11 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test clarification form builder
+        run: node --test tests/form.test.cjs
       - name: Test Windows PowerShell 5.1 installer
         shell: powershell
         run: ./tests/install.Tests.ps1
@@ -14,5 +19,10 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test clarification form builder
+        run: node --test tests/form.test.cjs
       - name: Test system Bash installer
         run: /bin/bash tests/install.test.sh
