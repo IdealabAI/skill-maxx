@@ -3,7 +3,7 @@ name: spec-maxx-refine
 description: Analyze a user-supplied, human-written specification for clarity, completeness, and ambiguity. Use when the user requests a review or refinement of an existing spec document.
 ---
 
-The version of this skill is 0.1.3. Mention the name and version of this skill in your final response to the user the first time it is invoked in a session.
+The version of this skill is 0.1.5. Mention the name and version of this skill in your final response to the user the first time it is invoked in a session.
 
 # Specification Review
 
@@ -21,9 +21,11 @@ Your suggested revisions should never add redundant information, and should neve
 
 ## HTML Clarification Form
 
-The same clarifying questions identified by your review should also be made available in a self-contained HTML document, which you should generate with the bundled builder, using structured JSON as its input. The builder supplies the table, radio buttons, Other fields, Defer decision choices, Submit button, and pasteable response. You should reuse the bundled interface without writing or modifying HTML, CSS, or JavaScript for each review. Your input to the builder should follow [the JSON format](references/form-input.md), illustrated by [the example](references/example-questions.json).
+The same clarifying questions identified by your review should also be made available in a self-contained HTML document, which you should generate with the bundled builder, using structured JSON as its input. The builder supplies the table, radio buttons, always-editable text fields, independent "document manually edited" checkboxes, Submit button, and pasteable response. You should reuse the bundled interface without writing or modifying HTML, CSS, or JavaScript for each review. Your input to the builder should follow [the JSON format](references/form-input.md), illustrated by [the example](references/example-questions.json).
 
-Each clarification question must include context that identifies the relevant passage (including line numbers), explains the ambiguity or conflict, and states why the distinction affects implementation or testing. The context should include a likely correction when the document supports one, clearly identified as a suggestion rather than a settled requirement. The context must contain enough information for the user to answer without consulting the chat. If the question refers to a specific passage in the spec document, include a quote (not more than one sentence) from the spec doc in addition to citing the line number.
+Each clarification question and statement of the issue must include context that identifies the relevant passage (including line numbers, section headings or identifiers, and excerpts from cited passages up to 1 sentence in length), explains the ambiguity or conflict, and states why the distinction affects implementation or testing. The context should include a likely correction when the document supports one, clearly identified as a suggestion rather than a settled requirement. The context must contain enough information for the user to answer without consulting the chat.
+
+The builder input separates this context into `citations` for passage references and excerpts, and `issue` for the ambiguity or conflict, its implications, and any suggested correction. The form displays citations separately and places the category below the issue in the same column.
 
 Save the JSON in the user's working directory with a unique name based on the current local timestamp, and invoke the following command through the available shell tool. The `<skill-directory>` placeholder below refers to the directory containing this installed SKILL.md.
 
@@ -33,7 +35,7 @@ node "<skill-directory>/scripts/build-form.cjs" "questions.json" "clarification.
 
 The builder requires Node.js 18 or later and no additional packages. If that is not available, or the shell tool is not available, skip using the builder entirely, and include a message to the user explaining this limitation.
 
-If an HTML file is made using the builder, link to this file in your response to the user, and explain that the user can open it, select answers, click Submit, and paste the generated text into the next conversation turn. The form's output includes answer text and identifies deferred and unanswered questions. If the user's next message contains this content, refer to the questions that you supplied to as JSON input to the builder to interpret their meaning.
+If an HTML file is made using the builder, link to this file in your response to the user, and explain that the user can open it, select answers, enter text, mark manual edits, click Submit, and paste the generated text into the next conversation turn. The form's output includes only questions the user addressed through a choice, non-whitespace text, or a manual-edit checkbox. Every included answer retains the text field regardless of the selected choice. Questions the user did not address are not included in the response and remain unresolved. If the user's next message contains this content, refer to the questions that you supplied as JSON input to the builder to interpret their IDs. For questions marked as manually edited, re-read the relevant document passages before suggesting revisions; if the current document is unavailable, ask for the updated passages. A manual-edit flag alone does not establish that the issue is resolved.
 
 ## Categories for evaluation
 

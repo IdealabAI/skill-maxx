@@ -1,23 +1,20 @@
 'use strict';
 
 function formatResponse(data, selections) {
-  const answers = data.questions.map((question, index) => {
+  const answers = data.questions.flatMap((question, index) => {
     const selection = selections[index];
-    let status = 'Unanswered';
+    const text = selection?.text ?? '';
+    const documentManuallyEdited = selection?.documentManuallyEdited === true;
     let answer = null;
-    if (selection?.value === 'defer') status = 'Deferred';
-    else if (selection?.value === 'other') {
-      if (!selection.text?.trim()) throw new Error(`${question.id}: Please enter your other answer.`);
-      status = 'Answered';
-      answer = selection.text.trim();
-    } else if (selection && /^\d+$/.test(selection.value) && question.choices[Number(selection.value)] !== undefined) {
-      status = 'Answered';
+    if (selection && /^\d+$/.test(selection.value) && question.choices[Number(selection.value)] !== undefined) {
       answer = question.choices[Number(selection.value)];
     }
-    return { id: question.id, question: question.question, status, answer };
+    if (answer === null && selection?.value !== 'other' && !text.trim() && !documentManuallyEdited) return [];
+    return [{ id: question.id, answer, text, documentManuallyEdited }];
   });
   return 'Please use these answers to suggest revisions to the specification and review remaining ambiguity. ' +
-    'Please leave deferred and unanswered questions unresolved and avoid redundant or inferable statements. ' +
+    'Please leave omitted questions unresolved and avoid redundant or inferable statements. ' +
+    'Please re-read passages marked as manually edited before suggesting further revisions. ' +
     'The following JSON contains review data.\n\n' + JSON.stringify({ spec: data.spec, answers }, null, 2);
 }
 
@@ -38,13 +35,18 @@ function mountForm(document) {
     const row = element('tr');
     const id = element('th', question.id);
     id.scope = 'row';
-    row.append(id, element('td', question.passage), element('td', question.category));
+    const issue = element('td');
+    issue.append(element('div', question.issue));
+    const category = element('div', question.category);
+    category.className = 'category';
+    issue.append(category);
+    row.append(id, element('td', question.citations), issue);
     const cell = element('td');
     const group = element('fieldset');
     group.append(element('legend', question.question));
     const radios = [];
     const choices = question.choices.map((label, value) => ({ label, value: String(value) }));
-    choices.push({ label: 'Other', value: 'other' }, { label: 'Defer decision', value: 'defer' });
+    choices.push({ label: 'Other', value: 'other' });
     for (const choice of choices) {
       const label = element('label');
       label.className = 'choice';
@@ -57,22 +59,23 @@ function mountForm(document) {
       radios.push(radio);
     }
     const custom = element('textarea');
-    custom.id = `other-${index}`;
+    custom.id = `text-${index}`;
     custom.rows = 2;
-    custom.disabled = true;
-    const customLabel = element('label', `Your other answer for ${question.id}`);
+    const customLabel = element('label', `Your answer or notes for ${question.id}`);
     customLabel.htmlFor = custom.id;
     customLabel.className = 'custom-label';
     group.append(customLabel, custom);
-    group.addEventListener('change', () => {
-      const other = radios.find(radio => radio.checked)?.value === 'other';
-      custom.disabled = !other;
-      custom.required = other;
-    });
+    const edited = element('input');
+    edited.type = 'checkbox';
+    edited.id = `edited-${index}`;
+    const editedLabel = element('label');
+    editedLabel.className = 'choice';
+    editedLabel.append(edited, element('span', 'document manually edited'));
+    group.append(editedLabel);
     cell.append(group);
     row.append(cell);
     rows.append(row);
-    return { radios, custom };
+    return { radios, custom, edited };
   });
   // Clear previously generated answers after edits to prevent copying stale decisions.
   form.addEventListener('input', () => {
@@ -84,9 +87,10 @@ function mountForm(document) {
   form.addEventListener('submit', event => {
     event.preventDefault();
     try {
-      output.value = formatResponse(data, controls.map(({ radios, custom }) => ({
+      output.value = formatResponse(data, controls.map(({ radios, custom, edited }) => ({
         value: radios.find(radio => radio.checked)?.value,
-        text: custom.value
+        text: custom.value,
+        documentManuallyEdited: edited.checked
       })));
       status.textContent = 'Your response is ready. You can copy the text below into your next message.';
       output.focus();

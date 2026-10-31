@@ -1,11 +1,11 @@
 {
-  "schemaVersion": 1,
   "spec": "Example spec: shared notes, draft 1",
   "questions": [
     {
       "id": "Q1",
       "category": "Edge Cases & Failure Handling",
-      "passage": "Editing: Users can update a shared note.",
+      "citations": "Line 12, Editing: \"Users can update a shared note.\"",
+      "issue": "The specification does not define how concurrent saves are handled. The decision determines whether an update may overwrite another user's changes and how concurrent editing is tested.",
       "question": "What should happen when two users save changes to the same note concurrently?",
       "choices": [
         "The second save is rejected, and the user must review the newer version.",

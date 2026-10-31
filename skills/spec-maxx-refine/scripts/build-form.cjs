@@ -13,15 +13,14 @@ function validateInput(data) {
   function text(value, label) {
     if (typeof value !== 'string' || !value.trim()) throw new Error(`${label} must be a nonempty string.`);
   }
-  object(data, ['schemaVersion', 'spec', 'questions'], 'input');
-  if (data.schemaVersion !== 1) throw new Error('schemaVersion must be 1.');
+  object(data, ['spec', 'questions'], 'input');
   text(data.spec, 'spec');
   if (!Array.isArray(data.questions)) throw new Error('questions must be an array.');
   const ids = new Set();
   data.questions.forEach((question, index) => {
     const label = `questions[${index}]`;
-    object(question, ['id', 'category', 'passage', 'question', 'choices'], label);
-    for (const key of ['id', 'category', 'passage', 'question']) text(question[key], `${label}.${key}`);
+    object(question, ['id', 'category', 'citations', 'issue', 'question', 'choices'], label);
+    for (const key of ['id', 'category', 'citations', 'issue', 'question']) text(question[key], `${label}.${key}`);
     if (ids.has(question.id)) throw new Error(`${label}.id must be unique.`);
     ids.add(question.id);
     if (!Array.isArray(question.choices) || question.choices.length < 2) throw new Error(`${label}.choices must contain at least two answers.`);
@@ -29,7 +28,7 @@ function validateInput(data) {
     question.choices.forEach((choice, choiceIndex) => {
       text(choice, `${label}.choices[${choiceIndex}]`);
       const key = choice.trim().toLowerCase();
-      if (['other', 'defer decision'].includes(key)) throw new Error(`${label}: Other and Defer decision are added automatically.`);
+      if (key === 'other') throw new Error(`${label}: Other is added automatically.`);
       if (choices.has(key)) throw new Error(`${label}.choices must be distinct.`);
       choices.add(key);
     });

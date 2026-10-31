@@ -14,15 +14,16 @@
     caption { text-align: left; padding: 16px; font-weight: 600; }
     th, td { text-align: left; vertical-align: top; padding: 16px; border-top: 1px solid #dce2ec; }
     thead { background: #eaf0f8; }
-    th:first-child { width: 14%; }
-    td:nth-child(2) { width: 30%; }
+    th:first-child { width: 8%; }
+    td:nth-child(2) { width: 22%; }
+    td:nth-child(3) { width: 30%; }
     td:last-child { width: 40%; }
+    .category { margin-top: 12px; color: #526075; font-size: 0.9em; }
     fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
     legend { padding: 0; font-weight: 600; margin-bottom: 12px; }
     .choice { display: flex; align-items: baseline; gap: 8px; margin: 10px 0; }
-    input[type=radio] { flex: none; }
+    input[type=radio], input[type=checkbox] { flex: none; }
     textarea { box-sizing: border-box; width: 100%; padding: 12px; font: inherit; border: 1px solid #8998af; border-radius: 6px; }
-    textarea:disabled { background: #eef1f5; }
     .custom-label { display: block; margin: 8px 0; }
     button { margin-top: 24px; padding: 12px 24px; border: 0; border-radius: 6px; background: #164fa3; color: white; font: inherit; cursor: pointer; }
     :focus-visible { outline: 3px solid #c16800; outline-offset: 3px; }
@@ -34,13 +35,13 @@
 <body>
   <h1>Specification clarification</h1>
   <p id="spec"></p>
-  <p>You can select an answer for each question, enter another answer, or defer a decision. After you click Submit, you can copy the generated text into your next message to the agent. Your selections remain in this page only until you close or reload it.</p>
+  <p>You can select an answer, enter text, or mark the document as manually edited for each question. You can combine these actions, and your text is included regardless of your selection. Questions you leave untouched are omitted from the response. After you click Submit, you can copy the generated text into your next message to the agent. Your entries remain in this page only until you close or reload it.</p>
   <noscript>This form requires JavaScript to display questions and generate your response.</noscript>
   <form id="clarifications">
     <div class="table-container" role="region" aria-label="Clarification questions" tabindex="0">
       <table>
         <caption>Specification review questions</caption>
-        <thead><tr><th scope="col">Question ID</th><th scope="col">Specification passage</th><th scope="col">Category</th><th scope="col">Question and answers</th></tr></thead>
+        <thead><tr><th scope="col">Question ID</th><th scope="col">Citations</th><th scope="col">Issue or conflict</th><th scope="col">Question and answers</th></tr></thead>
         <tbody id="questions"></tbody>
       </table>
     </div>
