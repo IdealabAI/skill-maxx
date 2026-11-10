@@ -241,6 +241,52 @@ Users can update their source checkout with `git pull --ff-only` and rerun the i
 
 Users can uninstall a skill by deleting only its named folder from the appropriate destination listed above. For example, removing the global echo test means deleting `<user-home>/.agents/skills/echo` and/or `<user-home>/.claude/skills/echo`. Users should confirm those folders contain the test installation before deleting them and start a fresh session afterward. Removal does not delete reports or the source checkout.
 
+## Skill Creation Scripts
+
+Developers can create a new skill with `scripts/newskill.ps1` on Windows or `scripts/newskill.sh` on macOS. Each script requires exactly one skill name and creates `skills/<skill-name>/SKILL.md` in this repository. The scripts locate the repository relative to their own location, so the destination does not depend on the terminal's current directory. Windows PowerShell 5.1 and Bash 3.2 are supported, with no additional runtime dependencies.
+
+The following PowerShell commands run from this checkout on Windows. Developers should replace `my-new-skill` with their chosen name. PowerShell also accepts the name as a positional argument, such as `.\scripts\newskill.ps1 my-new-skill`.
+
+```powershell
+Set-Location 'C:\Code\Idealab\skill-maxx'
+.\scripts\newskill.ps1 -Name my-new-skill
+```
+
+The following Bash command runs from the repository root on macOS:
+
+```bash
+/bin/bash scripts/newskill.sh my-new-skill
+```
+
+Names must contain 1-64 lowercase letters or digits, with single hyphens between groups. The scripts reject leading, trailing, and consecutive hyphens. The name `all` is reserved for installer selection; Windows device names `con`, `prn`, `aux`, `nul`, `com1` through `com9`, and `lpt1` through `lpt9` are also reserved on both platforms. An existing destination, including a file, directory, or link, causes an error without overwriting that destination. Failures return a nonzero exit code and an explanatory message.
+
+Both scripts create the following UTF-8 file without a byte-order mark, substituting the supplied name for `my-new-skill`:
+
+```markdown
+---
+name: my-new-skill
+description: TODO — Describe the skill and the requests that should activate it.
+---
+
+# my-new-skill
+
+TODO — Replace this paragraph with the skill instructions.
+```
+
+The completion output prints the absolute path to the new `SKILL.md`, instructs the developer to replace both TODO placeholders, and includes an installation command. Developers should finish the description and body before installation. The creation scripts create only the source skill; developers install the completed skill with the existing installers.
+
+The following commands install the new skill for both Codex and Claude Code in an existing project. Developers must replace `[REPO DIR]`, `[SKILL-NAME]`, and `[PROJECT DIR]` with the repository path, skill name, and target project path.
+
+```powershell
+& '[REPO DIR]\scripts\install.ps1' -Skills '[SKILL-NAME]' -ProjectPath '[PROJECT DIR]'
+```
+
+```bash
+/bin/bash "[REPO DIR]/scripts/install.sh" --skills "[SKILL-NAME]" --project-path "[PROJECT DIR]"
+```
+
+New skills automatically support the installers' existing agent selection, project and global scopes, preview mode, replacement options, and resource copying. The default `all` selection discovers the new folder. Developers can add supporting scripts, references, or assets inside that folder, and both installers copy the entire skill folder. No installer registration or manual skill list update is required.
+
 ## Skill Development and Automated Validation
 
 Developers can add a folder under `skills/` whose name uses lowercase letters, digits, and single hyphens. Each folder must contain a `SKILL.md` that starts with the following four-line header. The folder name and `name` field must match. The installers deliberately validate this repository's simple header format without a YAML runtime; the description must be a nonempty, single-line YAML string. Developers should quote YAML-special characters when needed.
